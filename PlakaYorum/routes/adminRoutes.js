@@ -387,9 +387,9 @@ router.delete('/admins/:id', async (req, res) => {
 // =========================================================
 router.get('/users', async (req, res) => {
   try {
-    const users = await User.find().select('-password').sort({ createdAt: -1 }).lean();
+    const users = await User.find().populate('claimedPlates').select('-password').sort({ createdAt: -1 }).lean();
     
-    // Her bir kullanıcının sahip olduğu plakaları bulalım
+    // Her ihtimale karşı ownerId'den de eşleşenleri bulalım (Eğer claimedPlates arrayine eklenmeyi kaçırmışsa)
     const userIds = users.map(u => u._id);
     const plates = await Plate.find({ ownerId: { $in: userIds }, isClaimed: true }).lean();
     
@@ -403,24 +403,34 @@ router.get('/users', async (req, res) => {
       }
     });
 
-    const data = users.map(u => ({
-      _id: u._id,
-      email: u.email,
-      isEmailVerified: u.isEmailVerified,
-      registrationIp: u.registrationIp,
-      registrationUserAgent: u.registrationUserAgent,
-      lastLoginIp: u.lastLoginIp,
-      lastLoginDate: u.lastLoginDate,
-      lastLoginUserAgent: u.lastLoginUserAgent,
-      isPremium: u.isPremium,
-      premiumExpiresAt: u.premiumExpiresAt,
-      kvkkApproved: u.kvkkApproved,
-      marketingApproved: u.marketingApproved,
-      isBanned: u.isBanned || false,
-      createdAt: u.createdAt,
-      loginHistory: u.loginHistory || [],
-      ownedPlates: platesByUser[u._id.toString()] || []
-    }));
+    const data = users.map(u => {
+      // populate() ile gelen plakalar
+      const populatedPlates = (u.claimedPlates || []).map(p => p.plateNumber).filter(Boolean);
+      // ownerId eşleşmesiyle gelen plakalar
+      const matchingPlates = platesByUser[u._id.toString()] || [];
+      
+      // Tekrarsız (unique) listeyi oluştur
+      const allPlates = [...new Set([...populatedPlates, ...matchingPlates])];
+
+      return {
+        _id: u._id,
+        email: u.email,
+        isEmailVerified: u.isEmailVerified,
+        registrationIp: u.registrationIp,
+        registrationUserAgent: u.registrationUserAgent,
+        lastLoginIp: u.lastLoginIp,
+        lastLoginDate: u.lastLoginDate,
+        lastLoginUserAgent: u.lastLoginUserAgent,
+        isPremium: u.isPremium,
+        premiumExpiresAt: u.premiumExpiresAt,
+        kvkkApproved: u.kvkkApproved,
+        marketingApproved: u.marketingApproved,
+        isBanned: u.isBanned || false,
+        createdAt: u.createdAt,
+        loginHistory: u.loginHistory || [],
+        ownedPlates: allPlates
+      };
+    });
 
     return res.status(200).json({
       success: true,
