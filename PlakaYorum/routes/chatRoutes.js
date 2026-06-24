@@ -20,7 +20,7 @@ const router = express.Router();
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 const authMiddleware = require('../middleware/auth');
-const { checkBadWords } = require('../middleware/badWordFilter');
+const { checkBadWordsAsync } = require('../middleware/badWordFilter');
 
 // Tüm chat route'ları auth gerektirir
 router.use(authMiddleware);
@@ -198,12 +198,12 @@ router.post('/send', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Alıcı bulunamadı.' });
     }
 
-    // Küfür kontrolü
-    const badWordResult = checkBadWords(content);
+    // Küfür kontrolü (Yapay Zeka Destekli)
+    const badWordResult = await checkBadWordsAsync(content);
     if (badWordResult && badWordResult.hasBadWord) {
       return res
         .status(400)
-        .json({ success: false, message: 'Mesajınız uygunsuz içerik barındırmaktadır.' });
+        .json({ success: false, message: badWordResult.reason || 'Mesajınız uygunsuz içerik barındırmaktadır.' });
     }
 
     // Mesajı şifrele
