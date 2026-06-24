@@ -53,9 +53,14 @@ const ChatMessageSchema = new mongoose.Schema(
   }
 );
 
+// Güvenli 32 byte (256-bit) anahtar üretici (Kullanıcı .env'e ne yazarsa yazsın çalışmasını sağlar)
+function getValidKey() {
+  return crypto.createHash('sha256').update(String(CHAT_ENCRYPTION_KEY)).digest();
+}
+
 // Mesajı şifrele (statik metod)
 ChatMessageSchema.statics.encryptMessage = function (plainText) {
-  const key = Buffer.from(CHAT_ENCRYPTION_KEY, 'hex');
+  const key = getValidKey();
   const iv = crypto.randomBytes(16);
   const cipher = crypto.createCipheriv('aes-256-gcm', key, iv);
   let encrypted = cipher.update(plainText, 'utf8', 'hex');
@@ -71,7 +76,7 @@ ChatMessageSchema.statics.encryptMessage = function (plainText) {
 // Mesajı çöz (statik metod)
 ChatMessageSchema.statics.decryptMessage = function (encryptedContent, iv, authTag) {
   try {
-    const key = Buffer.from(CHAT_ENCRYPTION_KEY, 'hex');
+    const key = getValidKey();
     const decipher = crypto.createDecipheriv('aes-256-gcm', key, Buffer.from(iv, 'hex'));
     decipher.setAuthTag(Buffer.from(authTag, 'hex'));
     let decrypted = decipher.update(encryptedContent, 'hex', 'utf8');
