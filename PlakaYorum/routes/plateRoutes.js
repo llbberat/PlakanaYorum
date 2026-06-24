@@ -11,6 +11,7 @@ const router = express.Router();
 
 const Plate = require('../models/Plate');
 const Comment = require('../models/Comment');
+const { sendAdminNotification } = require('../utils/mailer');
 const User = require('../models/User');
 const { plateFormatCheck } = require('../middleware/plateFormatCheck');
 const { badWordFilter } = require('../middleware/badWordFilter');
@@ -237,6 +238,20 @@ router.post(
       // Plaka başına yorum throttle kaydı
       if (req.recordComment) {
         req.recordComment();
+      }
+
+      // Admin'e mail gönder
+      try {
+        const adminHtml = `
+          <h3>Yeni Bir Yorum Onayı Bekliyor!</h3>
+          <p><strong>Plaka:</strong> ${plateNumber}</p>
+          <p><strong>Kategori:</strong> ${category}</p>
+          <p><strong>Yorum:</strong> "${content}"</p>
+          <p>Lütfen Admin Paneline girip yorumu onaylayın veya reddedin.</p>
+        `;
+        await sendAdminNotification('🚨 Yeni Yorum Onayı Bekliyor - PlakaYorum', adminHtml);
+      } catch(err) {
+        console.error('Admin maili gönderilemedi:', err);
       }
 
       return res.status(201).json({
