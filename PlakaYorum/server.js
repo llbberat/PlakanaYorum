@@ -167,7 +167,7 @@ app.use(async (req, res, next) => {
     }
 
     // Ayarlar endpoint'ini de muaf tut (frontend bakım durumunu öğrenmeli)
-    if (req.path === '/api/settings') {
+    if (req.path === '/api/settings' || req.path === '/api/auth/login') {
       return next();
     }
 
@@ -183,11 +183,27 @@ app.use(async (req, res, next) => {
 
     const settings = await SiteSettings.getSettings();
     if (settings.maintenanceMode) {
-      return res.status(503).json({
-        success: false,
-        maintenance: true,
-        message: settings.maintenanceMessage || 'Site bakım modundadır.',
-      });
+      // Eğer kullanıcı Admin ise bakım modunu es geç
+      let isAdmin = false;
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const jwt = require('jsonwebtoken');
+          const token = authHeader.split(' ')[1];
+          const decoded = jwt.verify(token, process.env.JWT_SECRET);
+          if (decoded.isAdmin) isAdmin = true;
+        } catch (e) {
+          // Geçersiz token
+        }
+      }
+
+      if (!isAdmin) {
+        return res.status(503).json({
+          success: false,
+          maintenance: true,
+          message: settings.maintenanceMessage || 'Site bakım modundadır.',
+        });
+      }
     }
   } catch (err) {
     // Bakım modu kontrolü hatası ana işleyişi etkilemesin
