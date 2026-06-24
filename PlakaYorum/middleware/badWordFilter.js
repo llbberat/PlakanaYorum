@@ -104,4 +104,12 @@ async function badWordFilter(req, res, next) {
   next();
 }
 
-module.exports = { badWordFilter };
+async function checkBadWordsAsync(text) {
+  let result = await checkWithAI(text);
+  if (!result) {
+    result = backupFilter(text);
+  }
+  return { hasBadWord: result.status === 'rejected', reason: result.reason };
+}
+
+module.exports = { badWordFilter, checkBadWordsAsync };
