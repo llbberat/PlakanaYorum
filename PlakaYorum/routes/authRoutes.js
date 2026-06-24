@@ -524,6 +524,45 @@ router.post('/verify-email', async (req, res) => {
 });
 
 // =========================================================
+// POST /api/auth/resend-verification
+// Doğrulama kodunu tekrar gönder (2 dakika bekleme süreli)
+// =========================================================
+router.post('/resend-verification', authMiddleware, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
+    if (!user) return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+    if (user.isEmailVerified) return res.status(400).json({ success: false, message: 'Hesabınız zaten doğrulanmış.' });
+
+    // 2 dakika (120 saniye) bekleme süresi kontrolü
+    const now = Date.now();
+    if (user.lastVerificationSentAt && (now - user.lastVerificationSentAt.getTime() < 2 * 60 * 1000)) {
+      const remainingSec = Math.ceil((120000 - (now - user.lastVerificationSentAt.getTime())) / 1000);
+      return res.status(429).json({ 
+        success: false, 
+        message: `Lütfen tekrar kod istemeden önce ${remainingSec} saniye bekleyin.` 
+      });
+    }
+
+    // Yeni kod oluştur
+    const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const verificationExpires = Date.now() + 24 * 60 * 60 * 1000;
+
+    user.emailVerificationCode = verificationCode;
+    user.emailVerificationExpires = verificationExpires;
+    user.lastVerificationSentAt = new Date();
+    await user.save();
+
+    const { sendVerificationEmail } = require('../utils/mailer');
+    await sendVerificationEmail(user.email, verificationCode);
+
+    return res.status(200).json({ success: true, message: 'Doğrulama kodu tekrar gönderildi.' });
+  } catch (error) {
+    console.error('[YENİ KOD GÖNDERME HATASI]:', error.message);
+    return res.status(500).json({ success: false, message: 'Sunucu hatası.' });
+  }
+});
+
+// =========================================================
 // GET /api/auth/me
 // Mevcut kullanıcının profil, puan ve rozet bilgilerini getirir
 // =========================================================
