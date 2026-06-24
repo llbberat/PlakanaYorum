@@ -396,8 +396,11 @@ router.get('/users', async (req, res) => {
     // Plakaları kullanıcılara eşle
     const platesByUser = {};
     plates.forEach(p => {
-      if (!platesByUser[p.ownerId]) platesByUser[p.ownerId] = [];
-      platesByUser[p.ownerId].push(p.plateNumber);
+      const oId = p.ownerId ? p.ownerId.toString() : null;
+      if (oId) {
+        if (!platesByUser[oId]) platesByUser[oId] = [];
+        platesByUser[oId].push(p.plateNumber);
+      }
     });
 
     const data = users.map(u => ({
@@ -416,7 +419,7 @@ router.get('/users', async (req, res) => {
       isBanned: u.isBanned || false,
       createdAt: u.createdAt,
       loginHistory: u.loginHistory || [],
-      ownedPlates: platesByUser[u._id] || []
+      ownedPlates: platesByUser[u._id.toString()] || []
     }));
 
     return res.status(200).json({
