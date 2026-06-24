@@ -278,16 +278,7 @@ router.post('/login', authLimiter, async (req, res) => {
       });
     }
 
-    // Email doğrulama kontrolü
-    if (!user.isEmailVerified) {
-      return res.status(403).json({
-        success: false,
-        message: 'Hesabınız henüz doğrulanmamış. Lütfen e-postanıza gelen kodu girin.',
-        requiresVerification: true,
-        email: user.email
-      });
-    }
-
+    // Email doğrulama kontrolünü kaldırdık, kullanıcı giriş yapabilecek ama profilde uyarı görecek.
     // Son giriş loglarını güncelle
     user.lastLoginIp = ipAddress;
     user.lastLoginDate = new Date();
