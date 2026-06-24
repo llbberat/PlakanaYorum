@@ -310,7 +310,7 @@
           <!-- Sol panel: Konuşma listesi -->
           <div class="chat-sidebar" id="chat-sidebar">
             <div class="chat-search-box">
-              <input type="text" id="chat-user-search" placeholder="Kullanıcı ara (e-posta)..." oninput="debounceSearchChatUser()" />
+              <input type="text" id="chat-user-search" placeholder="Kullanıcı adı ile ara..." oninput="debounceSearchChatUser()" />
               <div id="chat-search-results" class="chat-search-results hidden"></div>
             </div>
             <div id="chat-conversations" class="chat-conversations">
@@ -546,6 +546,28 @@
         </div>
         <button type="submit" class="btn btn-primary btn-full" id="btn-forgot-reset">Şifremi Sıfırla</button>
       </form>
+    </div>
+  </div>
+
+  <!-- ADMIN USER DETAILS MODAL -->
+  <div id="admin-user-details-modal" class="popup-overlay hidden" style="z-index: 10000;">
+    <div class="popup-content" style="max-width: 600px; max-height: 80vh; overflow-y: auto; text-align: left; background: var(--bg-color); color: var(--text-color); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
+      <span class="popup-close" onclick="document.getElementById('admin-user-details-modal').classList.add('hidden')">&times;</span>
+      <h3 style="margin-top: 0; margin-bottom: 1rem;">Kullanıcı Detayları</h3>
+      
+      <div id="admin-user-details-info" style="margin-bottom: 1.5rem; padding: 1rem; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0; color: #1e293b;">
+        <!-- Kullanıcı bilgileri buraya gelecek -->
+      </div>
+      
+      <h4 style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Sahiplendiği Plakalar</h4>
+      <div id="admin-user-details-plates" style="margin-bottom: 1.5rem;">
+        <!-- Plakalar buraya gelecek -->
+      </div>
+
+      <h4 style="margin-bottom: 0.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">Yaptığı Yorumlar</h4>
+      <div id="admin-user-details-comments">
+        <!-- Yorumlar buraya gelecek -->
+      </div>
     </div>
   </div>
 
