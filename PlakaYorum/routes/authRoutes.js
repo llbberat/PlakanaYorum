@@ -398,6 +398,15 @@ router.post('/claim-request', authMiddleware, upload.single('document'), async (
     });
     await req.user.save();
 
+    // Plaka modelinde de claimStatus'u pending yap
+    const Plate = require('../models/Plate');
+    let plate = await Plate.findOne({ plateNumber: cleaned });
+    if (!plate) {
+      plate = await Plate.create({ plateNumber: cleaned });
+    }
+    plate.claimStatus = 'pending';
+    await plate.save();
+
     console.log(`[SAHİPLENME TALEBİ] Kullanıcı: ${req.user.email} -> Plaka: ${cleaned}`);
     
     // Yöneticiye e-posta bildirimi gönder (Hata atsa bile işlemi durdurma)
