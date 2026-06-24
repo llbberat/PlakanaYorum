@@ -538,7 +538,7 @@ router.post('/verify-email', async (req, res) => {
 // =========================================================
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user._id).select('-password');
+    const user = await User.findById(req.user._id).populate('claimedPlates').select('-password');
     if (!user) {
       return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
     }
