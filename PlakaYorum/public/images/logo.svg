@@ -1,0 +1,28 @@
+<svg viewBox="0 0 120 120" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .stroke-main { stroke: currentColor; stroke-width: 4; fill: none; }
+    .fill-main { fill: currentColor; }
+    .bg-fill { fill: var(--bg-color, #ffffff); }
+    @media (prefers-color-scheme: dark) {
+      .bg-fill { fill: var(--bg-color, #0f172a); }
+    }
+  </style>
+
+  <!-- Büyüteç Halkası -->
+  <circle cx="50" cy="50" r="32" class="stroke-main" />
+  
+  <!-- Büyüteç Sapı (İçi boş hap şeklinde) -->
+  <rect x="68" y="68" width="16" height="40" rx="8" transform="rotate(-45 68 68)" class="stroke-main" />
+
+  <!-- Plaka Arka Planı ve Çerçevesi (Halkayı Kesmek İçin) -->
+  <rect x="25" y="42" width="85" height="24" rx="3" class="bg-fill" stroke="currentColor" stroke-width="4" />
+  
+  <!-- TR Bölümü Çizgisi -->
+  <line x1="42" y1="42" x2="42" y2="66" stroke="currentColor" stroke-width="2" />
+  
+  <!-- TR Yazısı -->
+  <text x="33.5" y="60" font-family="sans-serif" font-weight="bold" font-size="8" class="fill-main" text-anchor="middle">TR</text>
+  
+  <!-- Plaka Numarası -->
+  <text x="76" y="59" font-family="'Inter', sans-serif" font-weight="700" font-size="14" class="fill-main" text-anchor="middle" letter-spacing="1">06 POL 44</text>
+</svg>

@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PlakaYorum - Türkiye'nin Araç Plaka Yorum Platformu</title>
+  <meta name="description" content="PlakaYorum ile araç plakalarını aratın, trafikteki ve sokaktaki araçlarla ilgili geri bildirimleri okuyun ve anonim yorum yazın. KVKK uyumlu platform." />
+  <meta name="keywords" content="plaka sorgulama, araç plaka yorum, hatalı park, plaka yorum, araba yorumları" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:title" content="PlakaYorum - Araç Plakalarına Yorum Yaz" />
+  <meta property="og:description" content="Trafikteki ve sokaktaki araçlarla ilgili geri bildirim süreçlerini kolaylaştıran platform. Plaka sorgula, yorum yap, plakanı sahiplen." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://plakayorum.com" />
+  <meta property="og:image" content="https://plakayorum.com/images/og-image.jpg" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="PlakaYorum - Araç Plakalarına Yorum Yaz" />
+  <meta name="twitter:description" content="Trafikteki ve sokaktaki araçlarla ilgili geri bildirim süreçlerini kolaylaştıran platform." />
+  <meta name="twitter:image" content="https://plakayorum.com/images/og-image.jpg" />
+  <link rel="canonical" href="https://plakayorum.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="icon" type="image/svg+xml" href="/images/logo.svg" />
+  <link rel="stylesheet" href="/css/style.css" />
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body>
+
+  <!-- BAKIM MODU OVERLAY -->
+  <div id="maintenance-overlay" class="maintenance-overlay hidden">
+    <div class="maintenance-content">
+      <div class="maintenance-icon">🔧</div>
+      <h2>Bakım Modu</h2>
+      <p id="maintenance-message">Site şu anda bakım modundadır. Lütfen daha sonra tekrar deneyin.</p>
+    </div>
+  </div>
+
+  <!-- TOAST -->
+  <div id="toast" class="toast" role="alert"></div>
+
+  <!-- HEADER -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo" onclick="showHome()">
+        <div class="logo-plate"><div class="plate-blue"></div><span>34ABC</span></div>
+        <h1 class="logo-text">Plaka<span>Yorum</span></h1>
+      </div>
+      <div class="header-right">
+        <button id="nav-auth-btn" onclick="showSection('auth')" class="btn btn-outline-sm">Giriş Yap / Kayıt Ol</button>
+        <div id="nav-user-info" class="hidden user-info">
+          <span id="nav-email" class="user-email"></span>
+          <!-- Chat bildirimi -->
+          <button id="nav-chat-btn" onclick="showSection('chat')" class="btn btn-outline-sm chat-nav-btn hidden" title="Mesajlar">
+            💬 <span id="chat-unread-badge" class="chat-badge hidden">0</span>
+          </button>
+          <div class="dropdown">
+            <button class="btn btn-outline-sm dropdown-toggle" onclick="toggleDropdown()">☰</button>
+            <div id="user-dropdown" class="dropdown-menu hidden">
+              <a href="#" onclick="showSection('profile');closeDropdown()">👤 Profil</a>
+              <a href="#" onclick="showSection('chat');closeDropdown()">💬 Mesajlar</a>
+              <a href="#" onclick="showSection('claim-form');closeDropdown()">📋 Plakamı Sahiplen</a>
+              <a href="#" onclick="showSection('settings');closeDropdown()">⚙️ Ayarlar</a>
+              <a href="#" id="admin-link" class="hidden" onclick="showSection('admin');closeDropdown()">🛡️ Admin Paneli</a>
+              <hr/>
+              <a href="#" onclick="logout();closeDropdown()" class="text-red">🚪 Çıkış</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-content">
+
+    <!-- HOME -->
+    <section id="section-home" class="page-section active">
+      <div class="card card-main">
+        <form id="search-form" onsubmit="handleSearch(event)" class="search-bar">
+          <div class="search-input-wrap">
+            <svg class="search-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            <input id="search-input" type="text" placeholder="Plaka Ara... (Örn: 34ABC123)" maxlength="9" autocomplete="off" />
+          </div>
+          <button type="submit" id="search-btn" class="btn btn-primary btn-search">Sorgula</button>
+        </form>
+
+        <div class="features-grid">
+          <div class="feature-card">
+            <div class="feature-icon">📱🚘</div>
+            <h3>Araca Mesaj At / Uyar</h3>
+            <p>Plaka sahibine anonim olarak ulaşın (Hatalı park, açık far, vb.)</p>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">🗣️🚗</div>
+            <h3>Sokak Ekspertizi & Yorumları</h3>
+            <p>Bir aracı almadan önce 'sokak geçmişini' öğrenin</p>
+            <button class="btn btn-primary btn-sm" onclick="document.getElementById('search-input').focus()">Yorumları İncele</button>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon">💬</div>
+            <h3>Kullanıcılar Arası Mesajlaşma</h3>
+            <p>Diğer kullanıcılarla güvenli ve şifreli mesajlaşma</p>
+            <button class="btn btn-primary btn-sm" onclick="showSection('auth')">Hemen Başla</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- SEARCH RESULTS -->
+    <section id="section-results" class="page-section">
+      <div class="card card-main">
+        <button onclick="showHome()" class="btn-link mb-4">← Yeni Arama Yap</button>
+        <div class="plate-badge-wrap">
+          <div class="plate-badge"><div class="plate-blue-lg"></div><span id="plate-display"></span></div>
+          <div id="plate-claimed-badge" class="hidden"><span class="badge badge-green">✓ Sahiplenilmiş Plaka</span></div>
+          <div id="plate-claim-container" style="margin-top:0.5rem">
+            <button id="claim-plate-btn" class="btn btn-outline-sm hidden" onclick="claimPlate()">👑 Bu Plakayı Sahiplen (Ücretsiz)</button>
+            <span id="claim-plate-pending" class="badge badge-blue hidden">⏳ Sahiplenme Onayı Bekleniyor</span>
+          </div>
+
+          <!-- Plaka Sahibi Kontrolleri -->
+          <div id="plate-owner-controls" class="hidden" style="margin-top:1rem;padding:1rem;background:var(--bg-color);border-radius:8px;border:1px solid var(--border-color);">
+            <h4 style="margin:0 0 .5rem 0;font-size:.9rem;">🛡️ Plaka Sahibi Kontrolleri</h4>
+            <div style="display:flex;gap:.5rem;flex-wrap:wrap;align-items:center;">
+              <button id="toggle-comments-btn" class="btn btn-red-outline" onclick="togglePlateComments()">🔒 Yorumları Kapat</button>
+            </div>
+            <div id="plate-verify-info" style="margin-top:.75rem;"></div>
+            <div id="reverify-form-area" class="hidden" style="margin-top:1rem;padding:1rem;background:var(--card-bg);border-radius:8px;border:1px dashed var(--border-color);">
+              <h4 style="margin:0 0 .5rem 0;font-size:.85rem;">🔄 Yeniden Doğrulama</h4>
+              <p style="font-size:.8rem;color:var(--text-muted);margin-bottom:.75rem;">Ruhsat belgenizi ve bugünün tarihini yazdığınız bir kağıdı ruhsatın yanına koyarak fotoğrafını çekin.</p>
+              <form id="reverify-form" onsubmit="submitReverification(event)">
+                <div class="form-group" style="margin-bottom:.5rem;"><label style="font-size:.8rem;">Ruhsat Belgesi *</label><input type="file" id="reverify-document" accept="image/*,application/pdf" required /></div>
+                <div class="form-group" style="margin-bottom:.5rem;"><label style="font-size:.8rem;">Tarihli Kağıt Fotoğrafı *</label><input type="file" id="reverify-date-proof" accept="image/*,application/pdf" required /></div>
+                <button type="submit" class="btn btn-primary" style="font-size:.85rem;">Doğrulama Gönder</button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- YORUMLAR KAPATILDI UYARISI -->
+        <div id="comments-closed-msg" class="hidden" style="padding:1.5rem;text-align:center;background:var(--bg-color);border-radius:8px;margin-bottom:1rem;border:1px solid var(--border-color);">
+          <p style="font-size:1.1rem;margin:0;">🔒 Bu plaka sahibi yorumları kapatmıştır.</p>
+          <p class="text-muted" style="margin-top:.5rem;font-size:.85rem;">Plaka sahibi yorumları tekrar açana kadar yorum yapılamaz.</p>
+        </div>
+
+        <!-- COMMENT FORM (always visible under results) -->
+        <div class="comment-form-card" id="comment-form-card">
+          <div id="no-comments-msg" class="no-comments hidden">
+            <p class="no-comments-text">📭 Bu plaka hakkında henüz yorum yapılmamış veya plaka henüz sistemde kayıtlı değil. <strong>İlk yorumu sen yazmak ister misin?</strong></p>
+          </div>
+          <h3>💬 Yorum Yaz</h3>
+          <form id="comment-form" onsubmit="handleComment(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label>Kategori</label>
+                <select id="comment-category" required>
+                  <option value="" disabled selected>Seçiniz...</option>
+                  <option value="Hatalı Park">🅿️ Hatalı Park</option>
+                  <option value="Açık Far">💡 Açık Far</option>
+                  <option value="Tehlikeli Sürüş">⚠️ Tehlikeli Sürüş</option>
+                  <option value="Övgü/Teşekkür">👏 Övgü / Teşekkür</option>
+                  <option value="Diğer">💬 Diğer</option>
+                </select>
+              </div>
+              <div class="form-group text-right"><span id="char-count" class="char-count">0 / 280</span></div>
+            </div>
+            <div class="form-group">
+              <textarea id="comment-content" rows="4" maxlength="280" required placeholder="Yorumunuzu yazın... (min 5, max 280 karakter)" oninput="updateCharCount()" style="overflow:hidden;"></textarea>
+            </div>
+            <div class="kvkk-box" style="margin-top: 1rem;">
+              <div class="kvkk-scroll"><strong>1. Veri Sorumlusu:</strong> 6698 sayılı KVKK uyarınca PlakaYorum olarak veri sorumlusu sıfatıyla kişisel verilerinizi işliyoruz.<br><br><strong>2. İşlenen Veriler ve Amaçları:</strong> E-posta, telefon, araç plakası ve yorum kayıtları; platform hizmetleri ve park itirazı bildirimleri için işlenmektedir.<br><br><strong>3. Aktarım:</strong> Park itirazı (SMS/E-posta) bildirimleri için SMS aracı kurumlarıyla ve yasal zorunluluklar gereği yetkili kurumlarla paylaşılabilir.<br><br><strong>4. Hukuki Sebep:</strong> KVKK m. 5/2-c kapsamında sözleşmenin ifası ve yasal yükümlülükler doğrultusunda toplanmaktadır.<br><br><strong>5. Haklarınız:</strong> KVKK m. 11 uyarınca, plakayorum@gmail.com adresine ulaşarak verilerinizin silinmesini talep edebilirsiniz.</div>
+              <label class="checkbox-label"><input type="checkbox" id="comment-kvkk" required /><span>Yukarıdaki <strong>Aydınlatma Metni</strong>'ni okudum ve kişisel verilerimin işlenmesine açık rıza gösteriyorum.</span></label>
+              <label class="checkbox-label"><input type="checkbox" required /><span><strong>5651 sayılı yasa gereği</strong> IP adresimin loglanmasını ve yasal sorumluluğun tarafıma ait olduğunu kabul ediyorum.</span></label>
+            </div>
+            <button type="submit" id="comment-submit-btn" class="btn btn-primary btn-full">Yorum Gönder</button>
+          </form>
+        </div>
+
+        <!-- COMMENTS LIST -->
+        <div class="comments-section">
+          <h3>📝 Yorumlar <span id="comment-count-badge" class="badge badge-blue"></span></h3>
+          <div id="comments-list" class="comments-list"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUTH -->
+    <section id="section-auth" class="page-section">
+      <div class="card card-auth">
+        <div class="auth-tabs">
+          <button onclick="switchAuthTab('login')" id="tab-login" class="auth-tab active">Giriş Yap</button>
+          <button onclick="switchAuthTab('register')" id="tab-register" class="auth-tab">Kayıt Ol</button>
+        </div>
+        <form id="form-login" onsubmit="handleLogin(event)">
+          <div class="form-group"><label>E-posta</label><input type="email" id="login-email" required placeholder="ornek@email.com" /></div>
+          <div class="form-group"><label>Şifre</label><input type="password" id="login-password" required minlength="6" placeholder="••••••" /></div>
+          <div class="kvkk-box">
+            <div class="kvkk-scroll"><strong>1. Veri Sorumlusu:</strong> 6698 sayılı KVKK uyarınca PlakaYorum olarak veri sorumlusu sıfatıyla kişisel verilerinizi işliyoruz.<br><br><strong>2. İşlenen Veriler ve Amaçları:</strong> E-posta, telefon, araç plakası ve yorum kayıtları; platform hizmetleri ve park itirazı bildirimleri için işlenmektedir.<br><br><strong>3. Aktarım:</strong> Park itirazı (SMS/E-posta) bildirimleri için SMS aracı kurumlarıyla ve yasal zorunluluklar gereği yetkili kurumlarla paylaşılabilir.<br><br><strong>4. Hukuki Sebep:</strong> KVKK m. 5/2-c kapsamında sözleşmenin ifası ve yasal yükümlülükler doğrultusunda toplanmaktadır.<br><br><strong>5. Haklarınız:</strong> KVKK m. 11 uyarınca, plakayorum@gmail.com adresine ulaşarak verilerinizin silinmesini talep edebilirsiniz.</div>
+            <label class="checkbox-label"><input type="checkbox" id="login-kvkk" required /><span>Yukarıdaki <strong>Aydınlatma Metni</strong>'ni ve <strong>Kullanıcı Sözleşmesi</strong>'ni okudum ve kabul ediyorum.</span></label>
+          </div>
+          <!-- Cloudflare Turnstile (Test Key) -->
+          <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" style="margin-bottom: 1rem;"></div>
+          <button type="submit" class="btn btn-primary btn-full">Giriş Yap</button>
+          <div style="text-align: center; margin-top: 15px;">
+            <a href="#" onclick="showForgotPasswordModal(); return false;" class="text-muted" style="font-size: 0.9rem; text-decoration: underline;">Şifremi Unuttum</a>
+          </div>
+        </form>
+        <form id="form-register" onsubmit="handleRegister(event)" class="hidden">
+          <div class="form-group"><label>E-posta *</label><input type="email" id="reg-email" required placeholder="ornek@email.com" /></div>
+          <div class="form-group"><label>Şifre *</label><input type="password" id="reg-password" required minlength="6" placeholder="En az 6 karakter" /></div>
+          <div class="kvkk-box">
+            <div class="kvkk-scroll"><strong>1. Veri Sorumlusu:</strong> 6698 sayılı KVKK uyarınca PlakaYorum olarak veri sorumlusu sıfatıyla kişisel verilerinizi işliyoruz.<br><br><strong>2. İşlenen Veriler ve Amaçları:</strong> E-posta, telefon, araç plakası ve yorum kayıtları; platform hizmetleri ve park itirazı bildirimleri için işlenmektedir.<br><br><strong>3. Aktarım:</strong> Park itirazı (SMS/E-posta) bildirimleri için SMS aracı kurumlarıyla ve yasal zorunluluklar gereği yetkili kurumlarla paylaşılabilir.<br><br><strong>4. Hukuki Sebep:</strong> KVKK m. 5/2-c kapsamında sözleşmenin ifası ve yasal yükümlülükler doğrultusunda toplanmaktadır.<br><br><strong>5. Haklarınız:</strong> KVKK m. 11 uyarınca, plakayorum@gmail.com adresine ulaşarak verilerinizin silinmesini talep edebilirsiniz.</div>
+            <label class="checkbox-label"><input type="checkbox" id="reg-kvkk" required /><span>Yukarıdaki <strong>Aydınlatma Metni</strong>'ni okudum ve kişisel verilerimin işlenmesine açık rıza gösteriyorum.</span></label>
+            <label class="checkbox-label"><input type="checkbox" required /><span><strong>5651 sayılı yasa gereği</strong> IP adresimin loglanmasını ve yasal sorumluluğun tarafıma ait olduğunu kabul ediyorum.</span></label>
+            <label class="checkbox-label" style="margin-top: 0.75rem; border-top: 1px dashed #cbd5e1; padding-top: 0.75rem;">
+              <input type="checkbox" id="reg-marketing" />
+              <span>
+                <strong>Tanıtım ve Pazarlama Onayı:</strong> Kampanya ve yeni özelliklerden haberdar olmak için e-posta ve SMS almayı kabul ediyorum.<br>
+                <small style="display:block; margin-top:4px; color:#64748b; font-size:0.75rem; line-height:1.4;">
+                  Berat Topuz tarafından işletilen platformun sunacağı yeni özellikler, ürünler, hizmetler, kampanya ve tanıtım faaliyetlerinden haberdar edilebilmem amacıyla; sistemde kayıtlı e-posta adresime ve telefon numarama ticari elektronik ileti (e-posta, SMS) gönderilmesine, kişisel verilerimin bu amaçla işlenmesine ve platformun veri altyapısı sağlayıcılarına aktarılmasına rıza gösteriyorum.
+                  <em style="font-size:0.7rem;">(Dilediğiniz zaman plakayorum@gmail.com adresine mail atarak bu onayınızı ücretsiz olarak geri çekme ve tanıtım iletilerini durdurma hakkınız saklıdır.)</em>
+                </small>
+              </span>
+            </label>
+          </div>
+          <!-- Cloudflare Turnstile (Test Key) -->
+          <div class="cf-turnstile" data-sitekey="1x00000000000000000000AA" style="margin-bottom: 1rem;"></div>
+          <button type="submit" class="btn btn-primary btn-full">Kayıt Ol ve Onayla</button>
+        </form>
+
+        <form id="form-verify" onsubmit="handleVerify(event)" class="hidden">
+          <h3 style="margin-bottom:1rem;text-align:center;">Hesabı Doğrula</h3>
+          <p class="text-muted" style="margin-bottom:1rem;text-align:center;">Lütfen e-postanıza gelen 6 haneli doğrulama kodunu girin.</p>
+          <div class="form-group"><label>Doğrulama Kodu</label><input type="text" id="verify-code" required placeholder="123456" maxlength="6" style="text-align:center;font-size:1.5rem;letter-spacing:4px;" /></div>
+          <input type="hidden" id="verify-email" />
+          <button type="submit" class="btn btn-primary btn-full">Doğrula ve Giriş Yap</button>
+          <button type="button" class="btn btn-link btn-full" style="margin-top:1rem" onclick="switchAuthTab('login')">İptal Et</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- PROFILE -->
+    <section id="section-profile" class="page-section">
+      <div class="card card-main">
+        <h2>👤 Profilim</h2>
+        <div class="profile-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; background: var(--bg-color); padding: 15px; border-radius: 8px;">
+          <div>
+            <h3 id="profile-email-display" style="margin: 0; color: var(--text-color);">Yükleniyor...</h3>
+            <div id="profile-points-display" style="color: #2563eb; font-weight: bold; margin-top: 5px;">Puan: 0</div>
+          </div>
+          <div id="profile-badges-display" style="display: flex; gap: 10px;">
+            <!-- Rozetler buraya gelecek -->
+          </div>
+        </div>
+        <div id="profile-content"></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="section-settings" class="page-section">
+      <div class="card card-main">
+        <h2>⚙️ Ayarlar</h2>
+        
+        <div style="margin-bottom: 30px; padding: 20px; background: var(--bg-color); border-radius: 8px;">
+          <h3 style="margin-bottom: 15px;">Görünüm</h3>
+          <div style="display: flex; align-items: center; justify-content: space-between;">
+            <span style="font-weight: 500;">Karanlık Mod (Dark Mode)</span>
+            <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 28px;">
+              <input type="checkbox" id="theme-toggle" onchange="toggleTheme(event)" style="opacity: 0; width: 0; height: 0;">
+              <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+            </label>
+          </div>
+        </div>
+
+        <div style="padding: 20px; background: var(--bg-color); border-radius: 8px;">
+          <h3 style="margin-bottom: 15px;">Şifre Değiştir</h3>
+          <form id="form-change-password" onsubmit="handleChangePassword(event)">
+            <div class="form-group">
+              <label>Mevcut Şifreniz</label>
+              <input type="password" id="settings-current-password" required placeholder="••••••" />
+            </div>
+            <div class="form-group">
+              <label>Yeni Şifreniz</label>
+              <input type="password" id="settings-new-password" required minlength="6" placeholder="Yeni şifre (En az 6 karakter)" />
+            </div>
+            <button type="submit" class="btn btn-primary" id="btn-change-password">Şifreyi Güncelle</button>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- CLAIM FORM -->
+    <section id="section-claim-form" class="page-section">
+      <div class="card card-auth">
+        <h2>📋 Plakamı Sahiplen</h2>
+        <p class="text-muted mb-4">Plakanızı sahiplenmek için plaka numaranızı ve ruhsat belgenizi/e-Devlet belgenizi yükleyiniz. Admin onayından sonra plakanız sahiplenilecektir.</p>
+        <form id="claim-form" onsubmit="handleClaimRequest(event)" enctype="multipart/form-data">
+          <div class="form-group"><label>Plaka Numarası *</label><input type="text" id="claim-plate" required placeholder="34ABC123" maxlength="9" class="uppercase" /></div>
+          <div class="form-group"><label>Ruhsat / e-Devlet Belgesi</label><input type="file" id="claim-doc" accept=".jpg,.jpeg,.png,.pdf,.webp" /></div>
+          <button type="submit" class="btn btn-primary btn-full">Talep Gönder</button>
+        </form>
+      </div>
+    </section>
+
+    <!-- CHAT SECTION -->
+    <section id="section-chat" class="page-section">
+      <div class="card card-main">
+        <h2>💬 Mesajlarım</h2>
+        <div class="chat-container">
+          <!-- Sol panel: Konuşma listesi -->
+          <div class="chat-sidebar" id="chat-sidebar">
+            <div class="chat-search-box">
+              <input type="text" id="chat-user-search" placeholder="Kullanıcı ara (e-posta)..." oninput="debounceSearchChatUser()" />
+              <div id="chat-search-results" class="chat-search-results hidden"></div>
+            </div>
+            <div id="chat-conversations" class="chat-conversations">
+              <p class="text-muted" style="padding:1rem;text-align:center;">Henüz konuşmanız yok.</p>
+            </div>
+          </div>
+          <!-- Sağ panel: Mesaj alanı -->
+          <div class="chat-main" id="chat-main">
+            <div class="chat-placeholder">
+              <div class="chat-placeholder-icon">💬</div>
+              <p>Bir konuşma seçin veya yeni bir kullanıcı arayarak mesajlaşmaya başlayın.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ADMIN PANEL -->
+    <section id="section-admin" class="page-section">
+      <div class="card card-main">
+        <h2>🛡️ Admin Paneli</h2>
+        <div class="admin-tabs">
+          <button onclick="loadAdminTab('dashboard')" class="btn btn-outline-sm admin-tab active" data-tab="dashboard">Dashboard</button>
+          <button onclick="loadAdminTab('visitors')" class="btn btn-outline-sm admin-tab" data-tab="visitors">📊 Ziyaretçiler</button>
+          <button onclick="loadAdminTab('users')" class="btn btn-outline-sm admin-tab" data-tab="users">👥 Kullanıcılar</button>
+          <button onclick="loadAdminTab('comments')" class="btn btn-outline-sm admin-tab" data-tab="comments">Bekleyen Yorumlar</button>
+          <button onclick="loadAdminTab('claims')" class="btn btn-outline-sm admin-tab" data-tab="claims">Sahiplenme Talepleri</button>
+          <button onclick="loadAdminTab('reports')" class="btn btn-outline-sm admin-tab" data-tab="reports">🚨 Şikayetler</button>
+          <button onclick="loadAdminTab('owner-reports')" class="btn btn-outline-sm admin-tab" data-tab="owner-reports">🛡️ Sahip Şikayetleri</button>
+          <button onclick="loadAdminTab('reverifications')" class="btn btn-outline-sm admin-tab" data-tab="reverifications">🔄 Doğrulama</button>
+          <button onclick="loadAdminTab('messages')" class="btn btn-outline-sm admin-tab" data-tab="messages">📩 Mesajlar</button>
+          <button onclick="loadAdminTab('admins')" class="btn btn-outline-sm admin-tab" data-tab="admins">🔐 Admin Yönetimi</button>
+          <button onclick="loadAdminTab('maintenance')" class="btn btn-outline-sm admin-tab" data-tab="maintenance">🔧 Bakım Modu</button>
+          <button onclick="loadAdminTab('settings')" class="btn btn-outline-sm admin-tab" data-tab="settings">⚙️ Site Ayarları</button>
+        </div>
+        <div id="admin-content"></div>
+      </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="section-about" class="page-section">
+      <div class="card card-main">
+        <h2>Hakkımızda</h2>
+        <p><span class="dynamic-domain">PlakaYorum.com</span>, sürücüler ve araç sahipleri arasında güvenli, hızlı ve anonim bir iletişim köprüsü kurmak amacıyla kurulmuş bir yeni nesil sokak geri bildirim platformudur.</p>
+        <p style="margin-top:1rem;">Amacımız; trafikteki hatalı davranışları azaltmak, park problemlerini araçlara zarar vermeden çözmek ve ikinci el araç alım-satım süreçlerinde araçların "sokaktaki gerçek geçmişine" ışık tutmaktır. Tamamen yerli ve yenilikçi bir yazılım projesi olarak topluluğumuzla birlikte büyüyoruz.</p>
+      </div>
+    </section>
+
+    <!-- KVKK -->
+    <section id="section-kvkk" class="page-section">
+      <div class="card card-main">
+        <h2><span class="dynamic-domain">PlakaYorum.com</span> KVKK Aydınlatma Metni</h2>
+        <p>PlakaYorum olarak, 6698 sayılı Kişisel Verilerin Korunması Kanunu (“KVKK”) uyarınca, kullanıcılarımızın kişisel verilerinin korunmasına büyük önem veriyoruz.</p>
+        <ul style="margin-left: 1.5rem; margin-top: 1rem; line-height: 1.6;">
+          <li><strong>Veri Sorumlusu:</strong> <span class="dynamic-domain">PlakaYorum.com</span> platform yönetimi.</li>
+          <li><strong>İşlenen Veriler:</strong> Sitemize kayıt olurken paylaştığınız e-posta adresi, şifre ve plaka sahiplenme talebi sırasında sunduğunuz doğrulama belgeleri.</li>
+          <li><strong>İşleme Amacı:</strong> Hesabınızın güvenliğini sağlamak, plaka sahipliğinizi doğrulamak ve premium bildirim hizmetlerini ulaştırmak.</li>
+        </ul>
+        <p style="margin-top:1rem;"><strong>Önemli Not:</strong> Sitede aratılan ve yorum yapılan araç plakaları, 6698 sayılı KVKK kapsamında doğrudan bir gerçek kişiyi işaret etmediği sürece kişisel veri olarak kabul edilmemektedir. Anonim olarak yapılan yorumlar, 5651 sayılı Kanun uyarınca "Yer Sağlayıcı" sıfatıyla barındırılmaktadır. Haklarınız için <span class="dynamic-contact-email">iletisim@plakayorum.com</span> üzerinden bizimle iletişime geçebilirsiniz.</p>
+      </div>
+    </section>
+
+    <!-- TERMS -->
+    <section id="section-terms" class="page-section">
+      <div class="card card-main">
+        <h2>Kullanım Koşulları</h2>
+        <p><span class="dynamic-domain">PlakaYorum.com</span> web sitesine erişerek ve hizmetlerimizi kullanarak aşağıdaki şartları kabul etmiş sayılarsınız:</p>
+        <ul style="margin-left: 1.5rem; margin-top: 1rem; line-height: 1.6;">
+          <li><strong>Yaş Sınırı:</strong> Bu platformu kullanabilmek için en az 18 yaşında olmanız gerekmektedir.</li>
+          <li><strong>İçerik Sorumluğu (5651 Sayılı Kanun):</strong> PlakaYorum, kullanıcılar tarafından eklenen içerikleri önceden kontrol etmez. Eklenen her yorumdan, yorumu yazan kullanıcı hukuki ve cezai olarak kendisi sorumludur.</li>
+          <li><strong>Yasaklı İçerikler:</strong> Hakaret, küfür, tehdit, kişi veya kurumları hedef gösteren, kişilerin özel hayatını (isim, telefon, adres paylaşarak) ihlal eden yorumlar kesinlikle yasaktır ve tespiti halinde admin tarafından onaylanmayacak/silinecektir.</li>
+          <li><strong>Hizmet Kesintileri:</strong> Platform, teknik aksaklıklar veya güncellemeler nedeniyle oluşabilecek kesintilerden sorumlu tutulamaz.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- PRIVACY -->
+    <section id="section-privacy" class="page-section">
+      <div class="card card-main">
+        <h2>Gizlilik Politikası</h2>
+        <p><span class="dynamic-domain">PlakaYorum.com</span> olarak gizliliğinize saygı duyuyoruz:</p>
+        <ul style="margin-left: 1.5rem; margin-top: 1rem; line-height: 1.6;">
+          <li><strong>Anonimlik:</strong> Plakalar altına yapılan yorumlar varsayılan olarak tamamen anonimdir. Üye olmadan veya üye girişiyle yaptığınız yorumlarda, diğer kullanıcılar sizin e-posta adresinizi veya kişisel bilgilerinizi kesinlikle göremez.</li>
+          <li><strong>Veri Güvenliği:</strong> Hesap şifreleriniz veritabanımızda kriptografik olarak şifrelenmiş (hash) olarak tutulur ve üçüncü taraflarla asla paylaşılmaz.</li>
+          <li><strong>Belge İmhası:</strong> Plaka sahiplenme (Premium) talebi için gönderdiğiniz ruhsat veya e-devlet ekran görüntüleri, admin onay sürecinin ardından sistemimizden kalıcı olarak silinir; veritabanında saklanmaz.</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- COOKIES -->
+    <section id="section-cookies" class="page-section">
+      <div class="card card-main">
+        <h2>Çerez (Cookie) Politikası</h2>
+        <p>Sitemizde, kullanıcı deneyiminizi iyileştirmek amacıyla çerezler kullanılmaktadır:</p>
+        <ul style="margin-left: 1.5rem; margin-top: 1rem; line-height: 1.6;">
+          <li><strong>Oturum Çerezleri:</strong> Giriş yaptığınızda oturumunuzun açık kalmasını sağlamak amacıyla kullanılır.</li>
+          <li><strong>Analiz Çerezleri:</strong> Google Analytics gibi araçlarla, sitemizin hangi sayfalarının ne kadar ziyaret edildiğini anonim olarak ölçmek için kullanılır.</li>
+        </ul>
+        <p style="margin-top:1rem;">Tarayıcı ayarlarınızdan çerezleri dilediğiniz zaman devre dışı bırakabilirsiniz.</p>
+      </div>
+    </section>
+
+    <!-- HOW IT WORKS -->
+    <section id="section-how" class="page-section">
+      <div class="card card-main">
+        <h2>PlakaYorum Nasıl Çalışır?</h2>
+        <p style="margin-bottom: 1rem;">PlakaYorum, trafikteki ve sokaktaki araçlarla ilgili geri bildirim süreçlerini kolaylaştıran bir platformdur:</p>
+        <ul style="margin-left: 1.5rem; line-height: 1.6;">
+          <li><strong>Plaka Ara:</strong> Merak ettiğiniz veya trafikte karşılaştığınız bir aracın plakasını arama çubuğuna yazın.</li>
+          <li><strong>Yorum Yap veya Oku:</strong> Araç hatalı park ettiyse, farı açık kaldıysa veya ikinci el olarak satın almayı düşünüyorsanız geçmiş yorumları inceleyin ya da yeni bir durum bildirimi bırakın.</li>
+          <li><strong>Plakanı Sahiplen:</strong> Eğer aracın sahibiyseniz, plakanızı üzerinize tanımlayarak (Premium) aracınız hakkında bir yorum yapıldığı anda anında bildirim (SMS/E-posta) alın ve durumdan haberdar olun!</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- CONTACT -->
+    <section id="section-contact" class="page-section">
+      <div class="card card-auth">
+        <h2>📧 İletişim</h2>
+        <p style="font-size: 0.9rem; margin-bottom: 1.5rem; color: var(--text-muted);">
+          Bizimle her türlü soru, öneri, iş birliği veya genel destek talepleriniz için iletişime geçebilirsiniz.<br>
+          E-posta: <a href="mailto:iletisim@plakayorum.com" class="dynamic-contact-email dynamic-contact-mailto" style="color: #2563eb; text-decoration: none;">iletisim@plakayorum.com</a><br><br>
+          En geç 24 saat içinde dönüş sağlamaya özen gösteriyoruz.
+        </p>
+        <form id="form-contact" onsubmit="handleContact(event)">
+          <div class="form-group"><label>Ad Soyad</label><input type="text" id="contact-name" required placeholder="Adınız Soyadınız" maxlength="50" /></div>
+          <div class="form-group"><label>E-posta</label><input type="email" id="contact-email" required placeholder="ornek@email.com" maxlength="100" /></div>
+          <div class="form-group"><label>Mesaj</label><textarea id="contact-message" rows="4" required placeholder="Mesajınızı yazın..." maxlength="1000"></textarea></div>
+          <button type="submit" class="btn btn-primary btn-full">Gönder</button>
+        </form>
+      </div>
+      
+      <div class="card card-main" style="max-width: 460px; margin: 1.5rem auto 0 auto;">
+        <h3 style="font-size:1.1rem; color:var(--text-color);">İçerik Kaldırma (Uyar-Kaldır) Talepleri Hakkında:</h3>
+        <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.75rem; line-height:1.5;">
+          Platformumuz 5651 sayılı Kanun uyarınca "Yer Sağlayıcı" konumundadır. Aracınıza ait plakaya yapılan bir yorumun asılsız, karalayıcı veya kişilik haklarınızı ihlal edici olduğunu düşünüyorsanız, plaka numarası ve yorum linki ile birlikte <a href="mailto:kaldir@plakayorum.com" class="dynamic-removal-email dynamic-removal-mailto" style="color:#2563eb; text-decoration:none;">kaldir@plakayorum.com</a> adresine başvurabilirsiniz. İnceleme sonucunda uygun görülen içerikler 3 iş günü içerisinde sistemimizden kaldırılmaktadır.
+        </p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="footer">
+    <div class="footer-inner">
+      <div class="footer-col">
+        <div class="footer-brand">
+          <div class="logo-plate" style="font-size:.75rem;padding:1px 6px"><div class="plate-blue"></div><span>34ABC</span></div>
+          <span class="footer-brand-text">PlakaYorum</span>
+        </div>
+        <p class="footer-desc">Türkiye'nin araç plaka yorum platformu. KVKK ve 5651 sayılı kanun ile tam uyumlu.</p>
+        <div id="footer-social" class="footer-social"></div>
+      </div>
+      <div class="footer-col">
+        <h4>Yasal</h4>
+        <a href="#" onclick="showSection('kvkk')">📄 KVKK Aydınlatma Metni</a>
+        <a href="#" onclick="showSection('terms')">📄 Kullanım Koşulları</a>
+        <a href="#" onclick="showSection('privacy')">📄 Gizlilik Politikası</a>
+        <a href="#" onclick="showSection('cookies')">📄 Çerez Politikası</a>
+      </div>
+      <div class="footer-col">
+        <h4>Platform</h4>
+        <a href="#" onclick="showSection('how')">Nasıl Çalışır?</a>
+        <a href="#" onclick="showSection('contact')">İletişim</a>
+        <a href="#" onclick="showSection('about')">Hakkımızda</a>
+      </div>
+      <div class="footer-col">
+        <h4>İletişim</h4>
+        <p id="footer-email" class="footer-contact">📧 <span class="dynamic-contact-email">iletisim@plakayorum.com</span></p>
+        <p id="footer-phone" class="footer-contact">📞</p>
+        <p class="footer-contact">🏢 Kaldırma talepleri: <span class="dynamic-removal-email">kaldir@plakayorum.com</span></p>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>© 2026 PlakaYorum - Tüm Hakları Saklıdır</p>
+      <p>5651 sayılı kanun gereği tüm IP adresleri loglanmaktadır.</p>
+    </div>
+  </footer>
+
+  <!-- IMAGE POPUP (Admin belge görüntüleme) -->
+  <div id="image-popup" class="popup-overlay hidden" onclick="closePopup()">
+    <div class="popup-content" style="max-width: 600px;">
+      <span class="popup-close" onclick="closePopup()">&times;</span>
+      <img id="popup-img" src="" alt="Belge/Görsel" class="hidden" style="max-width: 100%; border-radius: 8px;">
+      <!-- Log container is dynamically injected here -->
+    </div>
+  </div>
+
+  <!-- CLAIM MODAL -->
+  <div id="claim-modal" class="popup-overlay hidden" style="z-index: 10000;">
+    <div class="popup-content" style="max-width: 500px; text-align: left; background: #fff; color: #1e293b; padding: 2rem; border-radius: 12px;">
+      <span class="popup-close" onclick="closeClaimModal()">&times;</span>
+      <h3 style="margin-top: 0;">👑 Plakayı Sahiplen</h3>
+      <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">
+        Plakayı kendi profilinize bağlamak için Ruhsat veya e-Devlet araç belgenizi yükleyiniz.
+      </p>
+      <form id="claim-form" onsubmit="submitClaim(event)">
+        <div class="form-group">
+          <label>Belge Yükle (Resim veya PDF) *</label>
+          <input type="file" id="claim-document" accept="image/*,application/pdf" required style="width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; background: var(--bg-color); color: var(--text-color);" />
+        </div>
+        <button type="submit" id="claim-submit-btn" class="btn btn-primary btn-full" style="margin-top: 1rem;">Gönder ve Onaya Sun</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- FORGOT PASSWORD MODAL -->
+  <div id="forgot-password-modal" class="popup-overlay hidden" style="z-index: 10000;">
+    <div class="popup-content" style="max-width: 400px; text-align: left; background: var(--bg-color); color: var(--text-color); padding: 2rem; border-radius: 12px; border: 1px solid var(--border-color);">
+      <span class="popup-close" onclick="closeForgotPasswordModal()">&times;</span>
+      <h3 style="margin-top: 0; color: #2563eb;">Şifremi Unuttum</h3>
+      
+      <!-- Adım 1: Mail Gönderme -->
+      <form id="forgot-password-step1" onsubmit="handleForgotPasswordSendCode(event)">
+        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">Kayıtlı e-posta adresinizi girin. Size 6 haneli bir sıfırlama kodu göndereceğiz.</p>
+        <div class="form-group">
+          <label>E-posta Adresi</label>
+          <input type="email" id="forgot-email" required placeholder="ornek@email.com" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="btn-forgot-send">Kod Gönder</button>
+      </form>
+
+      <!-- Adım 2: Kodu Doğrulama ve Yeni Şifre -->
+      <form id="forgot-password-step2" class="hidden" onsubmit="handleForgotPasswordReset(event)">
+        <p class="text-muted" style="margin-bottom: 1rem; font-size: 0.9rem;">E-postanıza gönderilen 6 haneli kodu ve yeni şifrenizi giriniz.</p>
+        <div class="form-group">
+          <label>Doğrulama Kodu</label>
+          <input type="text" id="forgot-code" required placeholder="123456" maxlength="6" style="text-align:center; font-size:1.2rem; letter-spacing:4px;" />
+        </div>
+        <div class="form-group">
+          <label>Yeni Şifre</label>
+          <input type="password" id="forgot-new-password" required minlength="6" placeholder="Yeni şifreniz" />
+        </div>
+        <button type="submit" class="btn btn-primary btn-full" id="btn-forgot-reset">Şifremi Sıfırla</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
