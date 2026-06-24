@@ -331,6 +331,20 @@ async function startServer() {
           console.log(`[OTOMATİK ONARIM] ${plate.plateNumber} plakasının takılı kalan durumu düzeltildi.`);
         }
       }
+
+      // --- USERNAME DOLDURUCU (Eksik olanlara) ---
+      const crypto = require('crypto');
+      const usersWithoutUsername = await User.find({ $or: [{ username: { $exists: false } }, { username: null }] });
+      for (const u of usersWithoutUsername) {
+        let generatedUsername = `user_${crypto.randomInt(1000000, 9999999)}`;
+        while (await User.findOne({ username: generatedUsername })) {
+          generatedUsername = `user_${crypto.randomInt(1000000, 9999999)}`;
+        }
+        u.username = generatedUsername;
+        await u.save();
+        console.log(`[USER GÜNCELLEME] ${u.email} için kullanıcı adı oluşturuldu: ${generatedUsername}`);
+      }
+      
     } catch (err) {
       console.error('Oto-onarım hatası:', err.message);
     }
