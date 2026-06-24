@@ -86,6 +86,14 @@ const UserSchema = new mongoose.Schema(
       ],
     },
 
+    // Kullanıcı Adı (benzersiz)
+    username: {
+      type: String,
+      unique: true,
+      trim: true,
+      sparse: true, // Eskiden kayıt olanlarda null olabilir diye sparse ekliyoruz (sonradan script ile dolduracağız)
+    },
+
     // Şifre (hashlenir, minimum 6 karakter)
     password: {
       type: String,
