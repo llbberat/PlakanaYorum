@@ -764,6 +764,14 @@ router.put('/claims/:userId/:requestId/reject', async (req, res) => {
     request.status = 'Rejected';
     await user.save();
 
+    // Plaka durumunu geri 'none' yap (Eğer başkasına ait değilse)
+    const Plate = require('../models/Plate');
+    const plate = await Plate.findOne({ plateNumber: request.plateNumber });
+    if (plate && plate.claimStatus === 'pending') {
+      plate.claimStatus = 'none';
+      await plate.save();
+    }
+
     console.log(`[SAHİPLENME RED] Kullanıcı: ${user.email} -> Plaka: ${request.plateNumber}`);
 
     return res.status(200).json({
