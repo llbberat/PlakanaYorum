@@ -160,8 +160,15 @@ router.post('/register', authLimiter, async (req, res) => {
     const verificationCode = crypto.randomInt(100000, 999999).toString();
     const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 dakika geçerli
 
+    // Benzersiz rastgele username oluştur (user_1234567)
+    let generatedUsername = `user_${crypto.randomInt(1000000, 9999999)}`;
+    while (await User.findOne({ username: generatedUsername })) {
+      generatedUsername = `user_${crypto.randomInt(1000000, 9999999)}`;
+    }
+
     const user = await User.create({
       email: email.toLowerCase().trim(),
+      username: generatedUsername,
       password,
       kvkkApproved: true,
       marketingApproved: !!marketingApproved,
@@ -338,6 +345,7 @@ router.get('/profile', authMiddleware, async (req, res) => {
       data: {
         _id: user._id,
         email: user.email,
+        username: user.username,
         isPremium: user.isPremium,
         isAdmin: user.isAdmin,
         claimedPlates: user.claimedPlates,
@@ -347,6 +355,41 @@ router.get('/profile', authMiddleware, async (req, res) => {
     });
   } catch (error) {
     console.error('[PROFİL HATASI]:', error.message);
+    return res.status(500).json({ success: false, message: 'Sunucu hatası.' });
+  }
+});
+
+// =========================================================
+// PUT /api/auth/profile/username
+// Kullanıcı adı değiştirme
+// =========================================================
+router.put('/profile/username', authMiddleware, async (req, res) => {
+  try {
+    const { username } = req.body;
+    if (!username || username.trim().length < 3) {
+      return res.status(400).json({ success: false, message: 'Kullanıcı adı en az 3 karakter olmalıdır.' });
+    }
+    
+    const cleanUsername = username.trim().toLowerCase();
+    
+    // Geçerli format kontrolü (Sadece harf, rakam, alt çizgi, nokta)
+    if (!/^[a-z0-9_.]+$/.test(cleanUsername)) {
+      return res.status(400).json({ success: false, message: 'Kullanıcı adı sadece küçük harf, rakam, alt çizgi ve nokta içerebilir.' });
+    }
+
+    // Başka biri kullanıyor mu kontrol et
+    const existing = await User.findOne({ username: cleanUsername });
+    if (existing && existing._id.toString() !== req.user._id.toString()) {
+      return res.status(409).json({ success: false, message: 'Bu kullanıcı adı daha önce alınmış.' });
+    }
+
+    const user = await User.findById(req.user._id);
+    user.username = cleanUsername;
+    await user.save();
+
+    return res.status(200).json({ success: true, message: 'Kullanıcı adı başarıyla güncellendi.', username: cleanUsername });
+  } catch (error) {
+    console.error('[USERNAME GÜNCELLEME HATASI]:', error.message);
     return res.status(500).json({ success: false, message: 'Sunucu hatası.' });
   }
 });
