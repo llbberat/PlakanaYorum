@@ -226,6 +226,11 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Son doğrulama kodu gönderim zamanı (Spam koruması için)
+    lastVerificationSentAt: {
+      type: Date,
+      default: null,
+    },
     // Ban (Yasaklanma) durumu
     isBanned: {
       type: Boolean,
