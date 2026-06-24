@@ -316,6 +316,25 @@ async function startServer() {
     });
     console.log('✅ MongoDB bağlantısı başarılı.');
 
+    // --- VERİTABANI OTOMATİK ONARICI (Stuck Claim Fix) ---
+    try {
+      const Plate = require('./models/Plate');
+      const User = require('./models/User');
+      const pendingPlates = await Plate.find({ claimStatus: 'pending' });
+      for (const plate of pendingPlates) {
+        const hasPendingRequest = await User.findOne({
+          'requests': { $elemMatch: { plateNumber: plate.plateNumber, status: 'Pending' } }
+        });
+        if (!hasPendingRequest) {
+          plate.claimStatus = 'none';
+          await plate.save();
+          console.log(`[OTOMATİK ONARIM] ${plate.plateNumber} plakasının takılı kalan durumu düzeltildi.`);
+        }
+      }
+    } catch (err) {
+      console.error('Oto-onarım hatası:', err.message);
+    }
+
     // Sunucuyu başlat
     app.listen(PORT, () => {
       console.log(`\n🚗 PlakaYorum API çalışıyor: http://localhost:${PORT}`);
