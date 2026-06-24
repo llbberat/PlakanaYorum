@@ -97,7 +97,7 @@ const DISPOSABLE_DOMAINS = [
 router.post('/register', authLimiter, async (req, res) => {
   try {
     const { email, password, kvkkApproved, marketingApproved, turnstileToken } = req.body;
-    
+
     // IP ve User-Agent alımı
     const ipAddress = req.ip || req.connection.remoteAddress || 'unknown';
     const userAgent = req.headers['user-agent'] || 'unknown';
@@ -178,7 +178,7 @@ router.post('/register', authLimiter, async (req, res) => {
       }]
     });
 
-    // Doğrulama e-postası gönder (Hata fırlatmaması için try/catch içinde)
+    // Doğrulama e-postası gönder
     try {
       await sendVerificationEmail(user.email, verificationCode);
     } catch(err) {
@@ -417,7 +417,7 @@ router.post('/claim-request', authMiddleware, upload.single('document'), async (
 router.post('/verify-email', async (req, res) => {
   try {
     const { email, code } = req.body;
-    
+
     if (!email || !code) {
       return res.status(400).json({ success: false, message: 'E-posta ve doğrulama kodu zorunludur.' });
     }
@@ -446,7 +446,7 @@ router.post('/verify-email', async (req, res) => {
     await user.save();
 
     const token = generateToken(user._id);
-    
+
     return res.status(200).json({
       success: true,
       message: 'Hesabınız başarıyla doğrulandı!',
@@ -534,7 +534,7 @@ router.post('/reset-password', async (req, res) => {
     }
 
     // Şifreyi doğrulamak için user'ı password dahil getiriyoruz
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       email: email.toLowerCase(),
       resetPasswordToken: code.trim(),
       resetPasswordExpire: { $gt: Date.now() } // Süresi dolmamış
@@ -552,11 +552,11 @@ router.post('/reset-password', async (req, res) => {
 
     // Şifreyi güncelle (Pre-save hook'u otomatik hashleyecek)
     user.password = newPassword;
-    
+
     // Kodları temizle
     user.resetPasswordToken = null;
     user.resetPasswordExpire = null;
-    
+
     await user.save();
 
     return res.status(200).json({ success: true, message: 'Şifreniz başarıyla sıfırlandı. Giriş yapabilirsiniz.' });
@@ -573,7 +573,7 @@ router.post('/reset-password', async (req, res) => {
 router.put('/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
-    
+
     if (!currentPassword || !newPassword) {
       return res.status(400).json({ success: false, message: 'Mevcut şifre ve yeni şifre zorunludur.' });
     }
