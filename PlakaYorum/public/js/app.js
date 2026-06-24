@@ -456,7 +456,18 @@ async function loadProfile() {
     const u = data.data;
     const reqs = (u.requests || []).map(r => `<tr><td>${r.plateNumber}</td><td>${r.status}</td><td>${new Date(r.createdAt).toLocaleDateString('tr-TR')}</td></tr>`).join('');
     
-    el.innerHTML = `<div class="profile-info"><div class="profile-row"><span>E-posta</span><span>${u.email}</span></div><div class="profile-row"><span>Kayıt Tarihi</span><span>${new Date(u.createdAt).toLocaleDateString('tr-TR')}</span></div></div>
+    el.innerHTML = `
+      <div class="profile-info" style="margin-bottom: 2rem;">
+        <div class="profile-row" style="align-items:center;">
+          <span>Kullanıcı Adı</span>
+          <div style="display:flex;gap:0.5rem;">
+            <input type="text" id="profile-username-input" value="${u.username || ''}" style="padding:0.5rem;border:1px solid #cbd5e1;border-radius:4px;" />
+            <button class="btn btn-outline-sm" onclick="updateUsername()">Güncelle</button>
+          </div>
+        </div>
+        <div class="profile-row"><span>E-posta</span><span>${u.email}</span></div>
+        <div class="profile-row"><span>Kayıt Tarihi</span><span>${new Date(u.createdAt).toLocaleDateString('tr-TR')}</span></div>
+      </div>
     ${u.requests&&u.requests.length?'<h3 style="margin-top:1.5rem;margin-bottom:.5rem">Sahiplenme Taleplerim</h3><table class="admin-table"><thead><tr><th>Plaka</th><th>Durum</th><th>Tarih</th></tr></thead><tbody>'+reqs+'</tbody></table>':'<p class="text-muted" style="margin-top:1rem">Henüz sahiplenme talebiniz yok.</p>'}
     
     <div id="user-messages" style="margin-top: 2rem;">
@@ -467,6 +478,19 @@ async function loadProfile() {
     // Mesajları yükle
     await loadUserMessages();
   } catch (err) { el.innerHTML = '<p class="text-muted">Profil yüklenemedi.</p>'; }
+}
+
+async function updateUsername() {
+  const newUsername = document.getElementById('profile-username-input').value;
+  try {
+    const data = await apiRequest('/auth/profile/username', {
+      method: 'PUT',
+      body: JSON.stringify({ username: newUsername })
+    });
+    showToast(data.message, 'success');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 // Kullanıcının mesajlarını çeken fonksiyon
@@ -614,12 +638,61 @@ async function loadAdminUsers(el) {
       actions = '<span class="badge badge-blue">Siz</span>';
     }
 
-    const emailDisplay = u.isBanned ? `<span style="text-decoration:line-through;color:#ef4444">${u.email}</span>${emailVerifiedBadge}` : `${u.email}${emailVerifiedBadge}`;
+    const emailDisplay = u.isBanned 
+      ? `<span style="text-decoration:line-through;color:#ef4444">${u.email}</span>${emailVerifiedBadge}` 
+      : `<a href="#" onclick="showAdminUserDetails('${u._id}'); return false;" style="color:#2563eb;font-weight:600;text-decoration:none;">${u.email}</a><br><span class="text-muted" style="font-size:0.75rem">${u.username || ''}</span>${emailVerifiedBadge}`;
 
     return `<tr><td>${emailDisplay}</td><td>${ipInfo}</td><td>${isPremium}</td><td>${platesHtml}</td><td>${kvkkHtml}</td><td>${date}</td><td>${actions}</td></tr>`;
   }).join('');
   
   el.innerHTML = `<table class="admin-table"><thead><tr><th>E-posta</th><th>Güvenlik (IP)</th><th>Üyelik</th><th>Plakalar</th><th>KVKK</th><th>Kayıt Tarihi</th><th>İşlem</th></tr></thead><tbody>${rows}</tbody></table>`;
+}
+
+async function showAdminUserDetails(userId) {
+  try {
+    const data = await apiRequest(`/admin/users/${userId}/details`);
+    const details = data.data;
+    
+    // Info fill
+    const isPremium = details.user.isPremium ? '⭐ Premium' : 'Standart';
+    document.getElementById('admin-user-details-info').innerHTML = `
+      <p><strong>E-posta:</strong> ${details.user.email}</p>
+      <p><strong>Kullanıcı Adı:</strong> ${details.user.username || '-'}</p>
+      <p><strong>Üyelik:</strong> ${isPremium}</p>
+      <p><strong>Kayıt Tarihi:</strong> ${new Date(details.user.createdAt).toLocaleDateString('tr-TR')}</p>
+    `;
+    
+    // Plates fill
+    if (details.plates && details.plates.length > 0) {
+      document.getElementById('admin-user-details-plates').innerHTML = details.plates.map(p => 
+        `<span class="badge badge-blue" style="margin-right:8px;">${p.plateNumber}</span>`
+      ).join('');
+    } else {
+      document.getElementById('admin-user-details-plates').innerHTML = '<p class="text-muted" style="font-size:0.85rem;">Sahiplenilmiş plaka yok.</p>';
+    }
+
+    // Comments fill
+    if (details.comments && details.comments.length > 0) {
+      document.getElementById('admin-user-details-comments').innerHTML = details.comments.map(c => `
+        <div style="border:1px solid #e2e8f0; border-radius:8px; padding:1rem; margin-bottom:1rem;">
+          <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+            <strong>${c.plateId ? c.plateId.plateNumber : 'Silinmiş Plaka'}</strong>
+            <span class="badge ${c.status === 'Approved' ? 'badge-green' : c.status === 'Rejected' ? 'badge-red' : 'badge-yellow'}">${c.status}</span>
+          </div>
+          <p style="margin:0; font-size:0.9rem;">${c.content}</p>
+          <div style="font-size:0.75rem; color:#64748b; margin-top:8px;">
+            <span>${c.category}</span> • <span>${new Date(c.createdAt).toLocaleString('tr-TR')}</span>
+          </div>
+        </div>
+      `).join('');
+    } else {
+      document.getElementById('admin-user-details-comments').innerHTML = '<p class="text-muted" style="font-size:0.85rem;">Henüz hiç yorum yapmamış.</p>';
+    }
+
+    document.getElementById('admin-user-details-modal').classList.remove('hidden');
+  } catch (err) {
+    showToast(err.message, 'error');
+  }
 }
 
 function showUserLogs(userId) {
@@ -1254,8 +1327,8 @@ async function loadChatConversations() {
       const prefix = c.isSentByMe ? 'Siz: ' : '';
       const unread = c.unreadCount > 0 ? `<span class="chat-conv-unread">${c.unreadCount}</span>` : '';
       const activeClass = chatCurrentPartnerId === c.partnerId ? ' active' : '';
-      return `<div class="chat-conv-item${activeClass}" onclick="openChat('${c.partnerId}','${c.partnerEmail}')">
-        <span class="conv-email">${c.partnerEmail}</span>
+      return `<div class="chat-conv-item${activeClass}" onclick="openChat('${c.partnerId}','${c.partnerUsername}')">
+        <span class="conv-email">${c.partnerUsername}</span>
         <span class="conv-preview">${prefix}${c.lastMessagePreview}</span>
         <div class="conv-meta"><span class="conv-date">${d}</span>${unread}</div>
       </div>`;
@@ -1265,7 +1338,7 @@ async function loadChatConversations() {
   }
 }
 
-async function openChat(partnerId, partnerEmail) {
+async function openChat(partnerId, partnerUsername) {
   chatCurrentPartnerId = partnerId;
   const mainEl = document.getElementById('chat-main');
   const sidebar = document.getElementById('chat-sidebar');
@@ -1276,7 +1349,7 @@ async function openChat(partnerId, partnerEmail) {
   mainEl.innerHTML = `
     <div class="chat-header">
       <button class="chat-header-back" onclick="closeChatView()">←</button>
-      <span class="chat-header-email">${partnerEmail}</span>
+      <span class="chat-header-email">${partnerUsername}</span>
     </div>
     <div class="chat-messages" id="chat-messages-area"></div>
     <div class="chat-input-area">
@@ -1345,7 +1418,7 @@ async function searchChatUser() {
       results.innerHTML = '<div class="chat-search-item" style="color:#94a3b8">Kullanıcı bulunamadı</div>';
     } else {
       results.innerHTML = data.data.map(u =>
-        `<div class="chat-search-item" onclick="openChat('${u._id}','${u.email}');document.getElementById('chat-search-results').classList.add('hidden');document.getElementById('chat-user-search').value='';">${u.email}</div>`
+        `<div class="chat-search-item" onclick="openChat('${u._id}','${u.username}');document.getElementById('chat-search-results').classList.add('hidden');document.getElementById('chat-user-search').value='';">${u.username}</div>`
       ).join('');
     }
     results.classList.remove('hidden');
