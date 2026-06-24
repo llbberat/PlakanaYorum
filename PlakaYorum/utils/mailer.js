@@ -259,4 +259,30 @@ async function sendCrashNotification(errorStack) {
   }
 }
 
-module.exports = { sendNotificationEmail, sendContactReplyEmail, sendVerificationEmail, sendCrashNotification };
+/**
+ * Yöneticiye sistem bildirimleri gönderir (Yeni yorum onayı, ruhsat onayı vb.)
+ */
+async function sendAdminNotification(subject, messageHtml) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'plakanayorum@gmail.com';
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'PlakaYorum Admin <noreply@plakanayorum.com.tr>',
+          to: adminEmail,
+          subject: subject,
+          html: messageHtml
+        })
+      });
+    } catch (err) {
+      console.error('[RESEND ADMIN BİLDİRİM HATASI]:', err);
+    }
+  }
+}
+
+module.exports = { sendNotificationEmail, sendContactReplyEmail, sendVerificationEmail, sendCrashNotification, sendAdminNotification };
