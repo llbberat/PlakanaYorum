@@ -447,38 +447,7 @@ async function handleVerify(e) {
   }
 }
 
-// ── PROFİL ──
-async function loadProfile() {
-  const el = document.getElementById('profile-content');
-  if (!state.token) { el.innerHTML = '<p>Profili görmek için giriş yapın.</p>'; return; }
-  try {
-    const data = await apiRequest('/auth/profile');
-    const u = data.data;
-    const reqs = (u.requests || []).map(r => `<tr><td>${r.plateNumber}</td><td>${r.status}</td><td>${new Date(r.createdAt).toLocaleDateString('tr-TR')}</td></tr>`).join('');
-    
-    el.innerHTML = `
-      <div class="profile-info" style="margin-bottom: 2rem;">
-        <div class="profile-row" style="align-items:center;">
-          <span>Kullanıcı Adı</span>
-          <div style="display:flex;gap:0.5rem;">
-            <input type="text" id="profile-username-input" value="${u.username || ''}" style="padding:0.5rem;border:1px solid #cbd5e1;border-radius:4px;" />
-            <button class="btn btn-outline-sm" onclick="updateUsername()">Güncelle</button>
-          </div>
-        </div>
-        <div class="profile-row"><span>E-posta</span><span>${u.email}</span></div>
-        <div class="profile-row"><span>Kayıt Tarihi</span><span>${new Date(u.createdAt).toLocaleDateString('tr-TR')}</span></div>
-      </div>
-    ${u.requests&&u.requests.length?'<h3 style="margin-top:1.5rem;margin-bottom:.5rem">Sahiplenme Taleplerim</h3><table class="admin-table"><thead><tr><th>Plaka</th><th>Durum</th><th>Tarih</th></tr></thead><tbody>'+reqs+'</tbody></table>':'<p class="text-muted" style="margin-top:1rem">Henüz sahiplenme talebiniz yok.</p>'}
-    
-    <div id="user-messages" style="margin-top: 2rem;">
-      <h3 style="margin-bottom: 1rem;">📩 Mesajlarım (Gelen Kutusu)</h3>
-      <div id="user-messages-list"><p class="text-muted">Mesajlarınız yükleniyor...</p></div>
-    </div>`;
-    
-    // Mesajları yükle
-    await loadUserMessages();
-  } catch (err) { el.innerHTML = '<p class="text-muted">Profil yüklenemedi.</p>'; }
-}
+// İlk (Eski) loadProfile silindi, aşağıdaki Gamification versiyonu ile birleştirildi.
 
 async function updateUsername() {
   const newUsername = document.getElementById('profile-username-input').value;
@@ -1487,20 +1456,42 @@ async function loadProfile() {
       }
     }
 
-    const platesHtml = u.ownedPlates && u.ownedPlates.length 
-      ? '<div class="profile-plates" style="display:flex;gap:0.5rem;flex-wrap:wrap;">' + u.ownedPlates.map(p => `<span class="badge badge-blue" style="font-size:1rem;padding:.5rem 1rem">${p}</span>`).join('') + '</div>'
+    const platesHtml = u.claimedPlates && u.claimedPlates.length 
+      ? '<div class="profile-plates" style="display:flex;gap:0.5rem;flex-wrap:wrap;">' + u.claimedPlates.map(p => `<span class="badge badge-blue" style="font-size:1rem;padding:.5rem 1rem">${p.plateNumber || p}</span>`).join('') + '</div>'
       : '<p class="text-muted">Henüz sahiplendiğiniz bir plaka yok.</p>';
+
+    const reqs = (u.requests || []).map(r => `<tr><td>${r.plateNumber}</td><td>${r.status}</td><td>${new Date(r.createdAt).toLocaleDateString('tr-TR')}</td></tr>`).join('');
       
     el.innerHTML = `
+      <div class="settings-section" style="margin-top: 1.5rem;">
+        <h3>Kullanıcı Adı</h3>
+        <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
+          <input type="text" id="profile-username-input" value="${u.username || ''}" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-color);color:var(--text-color);flex:1;max-width:300px;" placeholder="Yeni kullanıcı adı" />
+          <button class="btn btn-outline-sm" onclick="updateUsername()">Güncelle</button>
+        </div>
+      </div>
       <div class="settings-section" style="margin-top: 1.5rem;">
         <h3>Sahiplenilen Plakalar</h3>
         ${platesHtml}
       </div>
       <div class="settings-section" style="margin-top: 1.5rem;">
+        <h3>Sahiplenme Taleplerim</h3>
+        ${u.requests && u.requests.length ? '<table class="admin-table"><thead><tr><th>Plaka</th><th>Durum</th><th>Tarih</th></tr></thead><tbody>'+reqs+'</tbody></table>' : '<p class="text-muted">Henüz talep yok.</p>'}
+      </div>
+      <div class="settings-section" style="margin-top: 1.5rem;">
         <h3>Hesap Detayları</h3>
         <p><strong>Kayıt Tarihi:</strong> ${new Date(u.createdAt).toLocaleDateString('tr-TR')}</p>
         <p><strong>Üyelik Tipi:</strong> ${u.isPremium ? '⭐ Premium' : 'Standart'}</p>
+      </div>
+      <div class="settings-section" id="user-messages" style="margin-top: 1.5rem;">
+        <h3 style="margin-bottom: 1rem;">📩 Mesajlarım (Sistemden Gelen Kutusu)</h3>
+        <div id="user-messages-list"><p class="text-muted">Mesajlarınız yükleniyor...</p></div>
       </div>`;
+      
+      // Mesajları yükle
+      if (typeof loadUserMessages === 'function') {
+        await loadUserMessages();
+      }
   } catch (err) {
     el.innerHTML = '<p class="text-muted text-red">Hata: ' + err.message + '</p>';
   }
