@@ -68,12 +68,12 @@ router.get('/conversations', async (req, res) => {
     // Partnerlerin bilgilerini çek
     const partnerIds = Object.keys(conversationMap);
     const partners = await User.find({ _id: { $in: partnerIds } })
-      .select('email')
+      .select('username')
       .lean();
 
     const partnerMap = {};
     partners.forEach((p) => {
-      partnerMap[p._id.toString()] = p.email;
+      partnerMap[p._id.toString()] = p.username || 'Bilinmeyen Kullanıcı';
     });
 
     // Sonuç listesi
@@ -95,7 +95,7 @@ router.get('/conversations', async (req, res) => {
 
       return {
         partnerId: pid,
-        partnerEmail: partnerMap[pid] || 'Bilinmiyor',
+        partnerUsername: partnerMap[pid] || 'Bilinmeyen Kullanıcı',
         lastMessagePreview,
         lastMessageDate: lastMsg.createdAt,
         unreadCount: conv.unreadCount,
@@ -258,8 +258,8 @@ router.put('/read/:userId', async (req, res) => {
 });
 
 // =========================================================
-// GET /api/chat/search-users?q=email
-// Chat başlatmak için kullanıcı arama
+// GET /api/chat/search-users?q=username
+// Chat başlatmak için kullanıcı adı arama
 // =========================================================
 router.get('/search-users', async (req, res) => {
   try {
@@ -271,10 +271,10 @@ router.get('/search-users', async (req, res) => {
     }
 
     const users = await User.find({
-      email: { $regex: query, $options: 'i' },
+      username: { $regex: query, $options: 'i' },
       _id: { $ne: req.user._id }, // Kendini hariç tut
     })
-      .select('email _id')
+      .select('username _id')
       .limit(10)
       .lean();
 
