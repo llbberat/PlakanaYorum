@@ -443,6 +443,53 @@ router.get('/users', async (req, res) => {
 });
 
 // =========================================================
+// GET /api/admin/users/:id/details
+// Kullanıcının tüm yorumlarını ve plakalarını getir
+// =========================================================
+router.get('/users/:id/details', async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).populate('claimedPlates').select('-password').lean();
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'Kullanıcı bulunamadı.' });
+    }
+
+    const Comment = require('../models/Comment');
+    const Plate = require('../models/Plate');
+
+    // Kullanıcının tüm yorumları
+    const comments = await Comment.find({ userId: user._id }).sort({ createdAt: -1 }).populate('plateId').lean();
+
+    // Kullanıcının tüm plakaları (populate + ownerId check)
+    const matchingPlates = await Plate.find({ ownerId: user._id, isClaimed: true }).lean();
+    const populatedPlates = user.claimedPlates || [];
+    
+    // Merge unique plates
+    const allPlatesMap = new Map();
+    populatedPlates.forEach(p => allPlatesMap.set(p._id.toString(), p));
+    matchingPlates.forEach(p => allPlatesMap.set(p._id.toString(), p));
+    
+    const allPlates = Array.from(allPlatesMap.values());
+
+    return res.status(200).json({
+      success: true,
+      data: {
+        user: {
+          email: user.email,
+          username: user.username,
+          isPremium: user.isPremium,
+          createdAt: user.createdAt,
+        },
+        comments: comments,
+        plates: allPlates
+      }
+    });
+  } catch (error) {
+    console.error('[ADMIN USER DETAILS HATASI]:', error.message);
+    return res.status(500).json({ success: false, message: 'Sunucu hatası.' });
+  }
+});
+
+// =========================================================
 // PUT /api/admin/users/:id/ban
 // Kullanıcıyı yasakla / yasağını kaldır
 // =========================================================
