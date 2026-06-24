@@ -7,26 +7,8 @@
  * Üretim ortamında gerçek SMTP ayarları kullanılmalıdır.
  */
 
-const nodemailer = require('nodemailer');
-
-// Geliştirme ortamında Ethereal (sahte e-posta) veya konsol logu kullanılır
-let transporter;
-
-if (process.env.SMTP_HOST) {
-  // Gerçek SMTP ayarları varsa kullan
-  transporter = nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT) || 587,
-    secure: process.env.SMTP_SECURE === 'true',
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASS,
-    },
-  });
-} else {
-  // Geliştirme ortamı: konsola log yazdır (e-posta gönderme simülasyonu)
-  transporter = null;
-}
+// Nodemailer yerine Resend API kullanılacak
+// process.env.RESEND_API_KEY render ortam değişkenlerinden gelecek.
 
 /**
  * Premium plaka sahibine yorum bildirimi gönderir.
@@ -61,14 +43,26 @@ async function sendNotificationEmail(toEmail, plateNumber, commentContent, categ
     </div>
   `;
 
-  if (transporter) {
-    // Gerçek e-posta gönder
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"PlakaYorum" <bildirim@plakayorum.com>',
-      to: toEmail,
-      subject,
-      html,
-    });
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'PlakaYorum <noreply@plakanayorum.com.tr>',
+          to: toEmail,
+          subject: subject,
+          html: html
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) console.error('[RESEND HATASI]:', data);
+    } catch (err) {
+      console.error('[RESEND FETCH HATASI]:', err);
+    }
   } else {
     // Geliştirme ortamı: konsol simülasyonu
     console.log('═══════════════════════════════════════════');
@@ -104,13 +98,24 @@ async function sendContactReplyEmail(toEmail, replyMessage) {
     </div>
   `;
 
-  if (transporter) {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"PlakaYorum Destek" <destek@plakayorum.com>',
-      to: toEmail,
-      subject,
-      html,
-    });
+  if (process.env.RESEND_API_KEY) {
+    try {
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'PlakaYorum Destek <destek@plakanayorum.com.tr>',
+          to: toEmail,
+          subject: subject,
+          html: html
+        })
+      });
+    } catch (err) {
+      console.error('[RESEND HATASI]:', err);
+    }
   } else {
     console.log('═══════════════════════════════════════════');
     console.log('📧 İLETİŞİM CEVABI (Simülasyon)');
@@ -198,38 +203,59 @@ async function sendVerificationEmail(toEmail, code) {
     </html>
   `;
 
-  if (transporter) {
-    await transporter.sendMail({
-      from: process.env.SMTP_FROM || '"PlakaYorum" <dogrulama@plakayorum.com>',
-      to: toEmail,
-      subject,
-      html,
-    });
+  if (process.env.RESEND_API_KEY) {
+    try {
+      const response = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'PlakaYorum <noreply@plakanayorum.com.tr>',
+          to: toEmail,
+          subject: subject,
+          html: html
+        })
+      });
+      const data = await response.json();
+      if (!response.ok) console.error('[RESEND HATASI]:', data);
+    } catch (err) {
+      console.error('[RESEND FETCH HATASI]:', err);
+    }
   } else {
     console.log('═══════════════════════════════════════════');
-    console.log('📧 DOĞRULAMA KODU (Simülasyon)');
+    console.log('📧 E-POSTA DOĞRULAMA (Simülasyon)');
     console.log(`   Alıcı: ${toEmail}`);
-    console.log(`   Kod: ${code}`);
+    console.log(`   Doğrulama Kodu: ${code}`);
     console.log('═══════════════════════════════════════════');
   }
 }
 
 async function sendCrashNotification(errorStack) {
-  const adminEmail = process.env.SMTP_USER;
+  const adminEmail = process.env.ADMIN_EMAIL;
   if (!adminEmail) return;
 
   const subject = `⚠️ KRİTİK: PlakaYorum Sunucusu Çöktü`;
-  const html = `<h2>PlakaYorum Sunucusu Çöktü!</h2><p>Lütfen acilen sunucuya bağlanın.</p><pre>${errorStack}</pre>`;
-
-  if (transporter) {
+  
+  if (process.env.RESEND_API_KEY) {
     try {
-      await transporter.sendMail({
-        from: process.env.SMTP_FROM || '"PlakaYorum" <noreply@plakayorum.com>',
-        to: adminEmail,
-        subject,
-        html,
+      await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: 'PlakaYorum <noreply@plakanayorum.com.tr>',
+          to: adminEmail,
+          subject: subject,
+          html: `<pre style="color:red;">${errorStack}</pre>`
+        })
       });
-    } catch(e) {}
+    } catch (err) {
+      console.error('[RESEND HATASI]:', err);
+    }
   }
 }
 
