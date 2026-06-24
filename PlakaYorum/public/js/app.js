@@ -1462,7 +1462,22 @@ async function loadProfile() {
 
     const reqs = (u.requests || []).map(r => `<tr><td>${r.plateNumber}</td><td>${r.status}</td><td>${new Date(r.createdAt).toLocaleDateString('tr-TR')}</td></tr>`).join('');
       
+    let verificationHtml = '';
+    if (!u.isEmailVerified) {
+      verificationHtml = `
+      <div class="settings-section" style="margin-top: 1.5rem; background-color: rgba(239, 68, 68, 0.1); border: 1px solid #ef4444;">
+        <h3 style="color: #ef4444;">⚠️ Hesabınız Doğrulanmamış!</h3>
+        <p style="margin-bottom: 10px;">Lütfen e-posta adresinize gönderilen doğrulama kodunu girerek hesabınızı onaylayın. Onaysız hesapların özellikleri kısıtlanabilir.</p>
+        <div style="display:flex; gap:0.5rem;">
+          <input type="text" id="profile-verify-code" placeholder="6 Haneli Kod" style="padding:0.5rem;border:1px solid var(--border-color);border-radius:4px;background:var(--bg-color);color:var(--text-color);width:150px;" maxlength="6" />
+          <button class="btn btn-primary" onclick="verifyEmailFromProfile('${u.email}')">Doğrula</button>
+          <button class="btn btn-outline" onclick="resendVerificationFromProfile()">Yeni Kod İste</button>
+        </div>
+      </div>`;
+    }
+
     el.innerHTML = `
+      ${verificationHtml}
       <div class="settings-section" style="margin-top: 1.5rem;">
         <h3>Kullanıcı Adı</h3>
         <div style="display:flex;gap:0.5rem;margin-bottom:1rem;">
@@ -1495,6 +1510,26 @@ async function loadProfile() {
   } catch (err) {
     el.innerHTML = '<p class="text-muted text-red">Hata: ' + err.message + '</p>';
   }
+}
+
+async function verifyEmailFromProfile(email) {
+  const code = document.getElementById('profile-verify-code').value.trim();
+  if (!code) return showToast('Lütfen doğrulama kodunu girin.', 'error');
+  try {
+    const res = await apiRequest('/auth/verify-email', {
+      method: 'POST',
+      body: JSON.stringify({ email, code })
+    });
+    showToast(res.message, 'success');
+    loadProfile(); // Sayfayı yenile
+  } catch(err) { showToast(err.message, 'error'); }
+}
+
+async function resendVerificationFromProfile() {
+  try {
+    const res = await apiRequest('/auth/resend-verification', { method: 'POST' });
+    showToast(res.message, 'success');
+  } catch(err) { showToast(err.message, 'error'); }
 }
 
 // Şifre Değiştirme
