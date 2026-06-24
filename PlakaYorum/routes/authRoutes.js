@@ -18,7 +18,7 @@ const User = require('../models/User');
 const { authLimiter } = require('../middleware/rateLimiter');
 const authMiddleware = require('../middleware/auth');
 const crypto = require('crypto');
-const { sendVerificationEmail } = require('../utils/mailer');
+const { sendVerificationEmail, sendAdminNotification } = require('../utils/mailer');
 
 // Turnstile Doğrulama Fonksiyonu
 async function verifyTurnstile(token, ip) {
@@ -399,6 +399,19 @@ router.post('/claim-request', authMiddleware, upload.single('document'), async (
     await req.user.save();
 
     console.log(`[SAHİPLENME TALEBİ] Kullanıcı: ${req.user.email} -> Plaka: ${cleaned}`);
+    
+    // Yöneticiye e-posta bildirimi gönder (Hata atsa bile işlemi durdurma)
+    try {
+      const adminHtml = `
+        <h3>Yeni Bir Ruhsat Onayı Geldi!</h3>
+        <p><strong>Kullanıcı:</strong> ${req.user.email}</p>
+        <p><strong>Plaka:</strong> ${cleaned}</p>
+        <p>Lütfen Admin Paneline girip belgeyi inceleyerek talebi onaylayın veya reddedin.</p>
+      `;
+      await sendAdminNotification('🚨 Yeni Ruhsat Onayı Bekliyor - PlakaYorum', adminHtml);
+    } catch(err) {
+      console.error('Admin maili gönderilemedi:', err);
+    }
 
     return res.status(200).json({
       success: true,
