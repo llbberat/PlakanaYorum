@@ -232,7 +232,7 @@ async function submitClaim(e) {
   btn.textContent = 'İşleniyor... Yükleniyor...';
   
   try {
-    const res = await fetch('/api/plate/claim', {
+    const res = await fetch('/api/auth/claim-request', {
       method: 'POST',
       headers: {
         'Authorization': 'Bearer ' + state.token
